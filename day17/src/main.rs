@@ -1,32 +1,25 @@
 fn main() {
-    let vector = find_max_height();
-    println!("{:?}", vector);
-    println!("{:?}", get_max_height(vector));
+    let valid_velocity_count = find_all_valid_velocities();
+    println!("{:?}", valid_velocity_count);
 }
 
-fn find_max_height() -> (i32, i32) {
-    let mut max_height = 0;
-    let mut max_height_vector = (0, 0);
+fn find_all_valid_velocities() -> i32 {
+    let mut valid_velocity_count = 0;
     let max_single_magnitude =
         (INPUT[1].0.abs() - INPUT[0].0.abs()) * (INPUT[1].1.abs() - INPUT[0].1.abs());
 
-    for x in 0..max_single_magnitude {
-        for y in 0..max_single_magnitude {
+    for x in -max_single_magnitude..max_single_magnitude {
+        for y in -max_single_magnitude..max_single_magnitude {
             let dir_vector = (x, y);
 
             match get_max_height(dir_vector) {
-                Some(height) => {
-                    if height > max_height {
-                        max_height = height;
-                        max_height_vector = dir_vector;
-                    }
-                }
+                Some(_) => valid_velocity_count += 1,
                 None => {}
             }
         }
     }
 
-    max_height_vector
+    valid_velocity_count
 }
 
 fn get_max_height(mut dir_vector: (i32, i32)) -> Option<i32> {
