@@ -1,56 +1,55 @@
 use serde_json::Value;
-use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 use std::ptr::NonNull;
 
 fn main() {
-    let mut numbers: VecDeque<SnailNumber> = VecDeque::new();
+    let mut numbers: Vec<Value> = Vec::new();
 
     let lines = read_lines("./input.txt").unwrap();
     for line in lines {
         let number: Value = serde_json::from_str(line.unwrap().as_str()).unwrap();
-        numbers.push_back(create_tree_from_json(&number, None));
+        numbers.push(number);
     }
 
-    while numbers.len() > 1 {
-        let mut num1 = numbers.pop_front().unwrap();
-        let mut num2 = numbers.pop_front().unwrap();
-
-        // println!(
-        //     "adding {} + {}",
-        //     print_snail_number(&num1),
-        //     print_snail_number(&num2)
-        // );
-
-        let addition_tree = match (&mut num1, &mut num2) {
-            (SnailNumber::Pair(tree1), SnailNumber::Pair(tree2)) => {
-                let mut addition_tree = Box::new(SnailTree {
-                    left: SnailNumber::Num(0, None),
-                    right: SnailNumber::Num(0, None),
-                    parent: None,
-                });
-
-                tree1.parent = Some(NonNull::from(addition_tree.as_mut()));
-                tree2.parent = Some(NonNull::from(addition_tree.as_mut()));
-                Some(addition_tree)
+    let mut max_magnitude: u64 = 0;
+    for i in 0..numbers.len() {
+        for j in 0..numbers.len() {
+            if i == j {
+                continue;
             }
-            _ => None,
-        };
-        if let Some(mut tree) = addition_tree {
-            tree.left = num1;
-            tree.right = num2;
+            let mut num1 = create_tree_from_json(&numbers[i], None);
+            let mut num2 = create_tree_from_json(&numbers[j], None);
 
-            let mut pair = SnailNumber::Pair(tree);
-            while reduce_number(&mut pair) {}
-            // println!("{}", print_snail_number(&pair));
+            let addition_tree = match (&mut num1, &mut num2) {
+                (SnailNumber::Pair(tree1), SnailNumber::Pair(tree2)) => {
+                    let mut addition_tree = Box::new(SnailTree {
+                        left: SnailNumber::Num(0, None),
+                        right: SnailNumber::Num(0, None),
+                        parent: None,
+                    });
+                    tree1.parent = Some(NonNull::from(addition_tree.as_mut()));
+                    tree2.parent = Some(NonNull::from(addition_tree.as_mut()));
+                    Some(addition_tree)
+                }
+                _ => None,
+            };
+            if let Some(mut tree) = addition_tree {
+                tree.left = num1;
+                tree.right = num2;
+                let mut pair = SnailNumber::Pair(tree);
+                while reduce_number(&mut pair) {}
 
-            numbers.push_front(pair);
+                let magnitude = get_magnitude(&pair);
+                if magnitude > max_magnitude {
+                    max_magnitude = magnitude;
+                }
+            }
         }
     }
 
-    println!("{}", get_magnitude(&numbers[numbers.len() - 1]));
+    println!("{}", max_magnitude);
 }
 
 fn get_magnitude(number: &SnailNumber) -> u64 {
